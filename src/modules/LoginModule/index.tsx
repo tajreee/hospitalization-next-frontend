@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import z from "zod";
 
 const LoginModule = () => {
     const { login } = useAuthContext();
+    const router = useRouter();
 
     const [loading, setLoading] = useState(false);
 
@@ -52,7 +53,7 @@ const LoginModule = () => {
             
             setLoading(false);
             toast.success("Login successful!");
-            redirect("")
+            router.push("/dashboard");
             
         } catch (error) {
             setLoading(false);
