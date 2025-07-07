@@ -1,13 +1,38 @@
+import { customFetch } from "@/components/utils/customFetch";
 import useUserServer from "@/hooks/useUserServer";
 import NurseDashboard from "@/modules/NurseDashboard";
+import { NurseDashboardProps, NurseDashboardResponse } from "@/modules/NurseDashboard/interface";
 import PatientDashboard from "@/modules/PatientDashboard";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import React from "react";
 
 const DashboardPage = async () => {
     const user = await useUserServer();
+    
+    if (!user) {
+        redirect('/login');
+    }
 
     if (user?.role === "nurse") {
-        return <NurseDashboard />;
+        try {
+            const response = await customFetch<NurseDashboardResponse>('/dashboard',
+                {
+                    isAuthorized: true,
+                },
+                cookies
+            )
+
+            if (!response.success) {
+                return <div>Error loading nurse dashboard.</div>;
+            }
+
+
+            return <NurseDashboard data={response.data} />;
+        } catch (error) {
+            console.error("Error fetching nurse dashboard data:", error);
+            return <div>Error loading nurse dashboard.</div>;
+        }
         
     } else if (user?.role === "patient") {
         return <PatientDashboard />;
