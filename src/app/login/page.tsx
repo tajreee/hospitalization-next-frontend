@@ -7,7 +7,7 @@ const LoginPage = async () => {
     const user = await useUserServer();
 
     if (user) {
-        // redirect("/dashboard");
+        redirect("/dashboard");
     }
     return <LoginModule />;
 }
