@@ -30,3 +30,9 @@ export interface AuthContextProviderProps {
   children: React.ReactNode;
   user?: User;
 }
+
+export interface ValidateTokenResponse extends CustomFetchBaseResponse {
+  data: {
+    user: User
+  }
+}
