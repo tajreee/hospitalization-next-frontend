@@ -10,6 +10,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
 import { CreateFacilityResponse } from "./interface";
+import { toast } from "sonner";
 
 const CreateFacility = () => {
     const router = useRouter();
@@ -45,8 +46,8 @@ const CreateFacility = () => {
                 return;
             }
             
-            console.log("Facility created successfully:", response.data);
             setLoading(false);
+            toast.success(`Facility "${values.name}" created successfully!`);
             router.push("/facilities");
             
         } catch (error) {
