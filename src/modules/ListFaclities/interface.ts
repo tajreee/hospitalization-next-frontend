@@ -7,5 +7,7 @@ export interface Facility {
 }
 
 export interface ListFacilitiesResponse extends CustomFetchBaseResponse {
-    data: Facility[];
+    data: {
+        facilities: Facility[]
+    }
 }

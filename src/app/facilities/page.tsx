@@ -27,7 +27,7 @@ const FacilitiesPage = async () => {
 
         console.log("Facilities data:", response.data);
 
-        return <ListFacilities data={response.data} />;
+        return <ListFacilities facilities={response.data.facilities} />;
     } catch (error) {
         return <div>Error loading facilities.</div>;
     }
