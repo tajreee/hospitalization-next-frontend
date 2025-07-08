@@ -22,8 +22,6 @@ const ListFacilities = ({
 }: {
     facilities: Facility[]
 }) => {
-    console.log("Facilities facilities asdada:", facilities);
-    
     const [loading, setLoading] = useState<string | null>(null);
     const [localFacilities, setLocalFacilities] = useState<Facility[]>(facilities);
 
@@ -43,7 +41,7 @@ const ListFacilities = ({
 
             // Update local state to remove deleted facility
             setLocalFacilities(prev => prev.filter(facility => facility.id !== facilityId));
-            toast.success(`Facility "${facilityName}" deleted successfully`);
+            toast.success(`Facility "${facilityName}" deleted successfully!`);
             
         } catch (error) {
             console.error("Error deleting facility:", error);
