@@ -15,7 +15,6 @@ import { toast } from "sonner";
 const CreateFacility = () => {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
     const createFacilitySchema = z.object({
         name: z.string().min(1, "Name is required"),
@@ -42,7 +41,6 @@ const CreateFacility = () => {
 
             if (!response.success) {
                 setLoading(false);
-                setError(response.message || "Failed to create facility");
                 return;
             }
             
@@ -53,7 +51,6 @@ const CreateFacility = () => {
         } catch (error) {
             setLoading(false);
             console.error("Error creating facility:", error);
-            setError("An error occurred while creating the facility. Please try again.");
         }
     }
 
