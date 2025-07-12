@@ -50,7 +50,7 @@ const CreateFacility = () => {
             
         } catch (error) {
             setLoading(false);
-            console.error("Error creating facility:", error);
+            toast.error("Failed to create facility. Please try again.");
         }
     }
 
