@@ -15,3 +15,5 @@ export const ReservationsPage = async () => {
 
     return <div>Unauthorized</div>;
 }
+
+export default ReservationsPage;

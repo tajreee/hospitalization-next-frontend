@@ -7,8 +7,10 @@ export const CreateReservationPage = async () => {
     const user = await useUserServer();
 
     if (user?.role !== "nurse" ) {
-        redirect("/reservations");
+        redirect("/dashboard");
     }
 
-    return <CreateReservation />;
+    return <CreateReservation nurseId={user.id} />;
 }
+
+export default CreateReservationPage;
