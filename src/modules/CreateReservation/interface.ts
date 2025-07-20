@@ -26,6 +26,12 @@ export interface GetAllFacilitiesResponse extends CustomFetchBaseResponse {
     }
 }
 
+export interface GetPatientByNIKResponse extends CustomFetchBaseResponse {
+    data: {
+        patient: Patient;
+    }
+}
+
 export interface Reservation {
     id: string;
     dateIn: string;
@@ -48,4 +54,13 @@ export interface Nurse {
     id: string;
     name: string;
     email: string;
+}
+
+export interface Patient {
+    id: string;
+    name: string;
+    email: string;
+    gender: string;
+    nik: string;
+    birth_date: string;
 }

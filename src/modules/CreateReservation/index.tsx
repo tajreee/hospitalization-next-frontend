@@ -11,7 +11,7 @@ import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
-import { CreateReservationResponse, Facility, GetAllFacilitiesResponse, GetAllNursesResponse, GetAllRoomsResponse, Nurse } from "./interface";
+import { CreateReservationResponse, Facility, GetAllFacilitiesResponse, GetAllNursesResponse, GetAllRoomsResponse, GetPatientByNIKResponse, Nurse, Patient } from "./interface";
 import { Room } from "../ListRooms/interface";
 
 export const CreateReservation = (
@@ -22,9 +22,9 @@ export const CreateReservation = (
     const [loading, setLoading] = useState(false);
     
     // Data untuk setiap step
+    const [patient, setPatient] = useState<Patient>();
     const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
     const [availableFacilities, setAvailableFacilities] = useState<Facility[]>([]);
-    const [nurses, setNurses] = useState<Nurse[]>([]);
     
     // Data yang akan disimpan
     const [reservationData, setReservationData] = useState({
@@ -32,10 +32,16 @@ export const CreateReservation = (
         dateOut: null as Date | null,
         roomId: "",
         facilityIds: [] as string[],
-        nurseId: nurseId
+        nurseId: nurseId,
+        patientId: ""
     });
 
-    // Schema untuk Step 1 - Date Selection
+    // Schema untuk Step 1 - Patient Selection
+    const patientSchema = z.object({
+        nik: z.string().min(1, "NIK is required"),
+    })
+
+    // Schema untuk Step 2 - Date Selection
     const dateSchema = z.object({
         dateIn: z.date().refine(
             (date) => date >= new Date(new Date().setHours(0, 0, 0, 0)), 
@@ -50,17 +56,25 @@ export const CreateReservation = (
         }
     );
 
-    // Schema untuk Step 2 - Room Selection
+    // Schema untuk Step 4 - Room Selection
     const roomSchema = z.object({
         roomId: z.string().min(1, "Please select a room"),
     });
 
-    // Schema untuk Step 3 - Facility Selection
+    // Schema untuk Step 4 - Facility Selection
     const facilitySchema = z.object({
         facilityIds: z.array(z.string()).min(1, "Please select at least one facility"),
     });
 
     // Form untuk step saat ini
+
+    const patientForm = useForm({
+        resolver: zodResolver(patientSchema),
+        defaultValues: {
+            nik: "",
+        }
+    });
+
     const dateForm = useForm({
         resolver: zodResolver(dateSchema),
         defaultValues: {
@@ -100,7 +114,38 @@ export const CreateReservation = (
         fetchFacilities();
     }, []);
 
-    // Step 1: Submit dates and fetch available rooms
+    const onSubmitPatient = async (values: z.infer<typeof patientSchema>) => {
+        try {
+            setLoading(true);
+            const response = await customFetch<GetPatientByNIKResponse>(`/patients/${values.nik}`, {
+                method: 'GET',
+                isAuthorized: true,
+            });
+
+            if (!response.success) {
+                toast.error("Patient not found");
+                setPatient(undefined);
+                return;
+            }
+
+            setPatient(response.data.patient);
+            setReservationData(prev => ({
+                ...prev,
+                patientId: response.data.patient.id,
+                nurseId: nurseId || prev.nurseId
+            }));
+            toast.success("Patient found! Please select dates.");
+            
+        } catch (error) {
+            toast.error("Failed to fetch patient data");
+            console.error("Error fetching patient data:", error);
+ 
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // Step 2: Submit dates and fetch available rooms
     const onSubmitDates = async (values: z.infer<typeof dateSchema>) => {
         try {
             setLoading(true);
@@ -125,7 +170,7 @@ export const CreateReservation = (
             }
 
             setAvailableRooms(response.data.rooms);
-            setCurrentStep(2);
+            setCurrentStep(3);
             toast.success("Dates saved! Please select a room.");
             
         } catch (error) {
@@ -135,22 +180,23 @@ export const CreateReservation = (
         }
     };
 
-    // Step 2: Submit room selection
+    // Step 3: Submit room selection
     const onSubmitRoom = (values: z.infer<typeof roomSchema>) => {
         setReservationData(prev => ({
             ...prev,
             roomId: values.roomId
         }));
-        setCurrentStep(3);
+        setCurrentStep(4);
         toast.success("Room selected! Please choose facilities and nurse.");
     };
 
-    // Step 3: Submit final reservation
+    // Step 4: Submit final reservation
     const onSubmitFinal = async (values: z.infer<typeof facilitySchema>) => {
         try {
             setLoading(true);
 
             const finalData = {
+                patient_id: reservationData.patientId,
                 room_id: reservationData.roomId,
                 nurse_id: reservationData.nurseId,
                 facilities: values.facilityIds,
@@ -192,17 +238,112 @@ export const CreateReservation = (
             <Card className="w-full max-w-2xl p-6 bg-white shadow-lg rounded-lg">
                 <CardHeader>
                     <CardTitle className="text-2xl font-bold text-center">
-                        Create New Reservation - Step {currentStep} of 3
+                        Create New Reservation - Step {currentStep} of 4
                     </CardTitle>
                     <CardDescription className="text-center text-gray-600">
-                        {currentStep === 1 && "Select your check-in and check-out dates"}
-                        {currentStep === 2 && "Choose an available room"}
-                        {currentStep === 3 && "Select facilities"}
+                        {currentStep === 1 && "Enter patient NIK to start"}
+                        {currentStep === 2 && "Select your check-in and check-out dates"}
+                        {currentStep === 3 && "Choose an available room"}
+                        {currentStep === 4 && "Select facilities"}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {/* Step 1: Date Selection */}
+                    {/* Step 1: Patient Selection */}
                     {currentStep === 1 && (
+                        <div className="space-y-6">
+                            <Form {...patientForm}>
+                                <form onSubmit={patientForm.handleSubmit(onSubmitPatient)} className="space-y-4">
+                                    <FormField
+                                        control={patientForm.control}
+                                        name="nik"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>NIK</FormLabel>
+                                                <FormControl>
+                                                    <Input {...field} placeholder="Enter patient NIK" />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <Button type="submit" className="w-full" disabled={loading}>
+                                        {loading ? "Searching..." : "Search Patient"}
+                                    </Button>
+                                </form>
+                            </Form>
+
+                            {/* Patient Information Card */}
+                            {patient && (
+                                <Card className="border-green-200 bg-green-50">
+                                    <CardHeader className="pb-3">
+                                        <CardTitle className="flex items-center text-green-800">
+                                            <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center mr-3">
+                                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                                </svg>
+                                            </div>
+                                            Patient Information
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            <div className="space-y-2">
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-600">Full Name</p>
+                                                    <p className="text-lg font-semibold text-gray-900">{patient.name}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-600">NIK</p>
+                                                    <p className="text-gray-900 font-mono">{patient.nik}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-600">Email</p>
+                                                    <p className="text-gray-900">{patient.email}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="space-y-2">
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-600">Date of Birth</p>
+                                                    <p className="text-gray-900">
+                                                        {patient.birth_date ? new Date(patient.birth_date).toLocaleDateString('id-ID') : 'Not provided'}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-gray-600">Gender</p>
+                                                    <p className="text-gray-900 capitalize">{patient.gender || 'Not provided'}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex space-x-3">
+                                            <Button 
+                                                onClick={() => setCurrentStep(2)} 
+                                                className="flex-1"
+                                                size="lg"
+                                            >
+                                                Continue with this Patient
+                                            </Button>
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => {
+                                                    setPatient(undefined);
+                                                    // patientForm.reset();
+                                                }}
+                                                className="flex-1"
+                                                size="lg"
+                                            >
+                                                Search Another Patient
+                                            </Button>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Step 2: Date Selection */}
+                    {currentStep === 2 && (
                         <Form {...dateForm}>
                             <form onSubmit={dateForm.handleSubmit(onSubmitDates)} className="space-y-4">
                                 <FormField
@@ -248,8 +389,8 @@ export const CreateReservation = (
                         </Form>
                     )}
 
-                    {/* Step 2: Room Selection */}
-                    {currentStep === 2 && (
+                    {/* Step 3: Room Selection */}
+                    {currentStep === 3 && (
                         <Form {...roomForm}>
                             <form onSubmit={roomForm.handleSubmit(onSubmitRoom)} className="space-y-4">
                                 <div className="space-y-4">
@@ -301,8 +442,8 @@ export const CreateReservation = (
                         </Form>
                     )}
 
-                    {/* Step 3: Facility and Nurse Selection */}
-                    {currentStep === 3 && (
+                    {/* Step 4: Facility and Nurse Selection */}
+                    {currentStep === 4 && (
                         <Form {...facilityForm}>
                             <form onSubmit={facilityForm.handleSubmit(onSubmitFinal)} className="space-y-6">
                                 {/* Facility Selection */}
