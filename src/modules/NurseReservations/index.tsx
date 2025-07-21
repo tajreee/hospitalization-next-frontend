@@ -1,12 +1,18 @@
+"use client"
+
 import React from "react";
 import { Reservation } from "./interface";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, User, UserCheck, Home, Clock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, User, UserCheck, Home, Clock, Plus, Eye } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export const NurseReservations = (
     { reservations }: { reservations: Reservation[] }
 ) => {
+    const router = useRouter();
+
     // Helper function to format date
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -46,12 +52,32 @@ export const NurseReservations = (
         }
     };
 
+    // Navigation handlers
+    const handleCreateReservation = () => {
+        router.push('/reservations/create');
+    };
+
+    const handleViewDetail = (reservationId: string) => {
+        router.push(`/reservations/${reservationId}`);
+    };
+
     return (
         <div className="min-h-screen p-6 bg-gray-50">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-6">
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Reservations</h1>
-                    <p className="text-gray-600">Manage and view all patient reservations</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">Reservations</h1>
+                            <p className="text-gray-600">Manage and view all patient reservations</p>
+                        </div>
+                        <Button 
+                            onClick={handleCreateReservation}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg shadow-md transition-colors duration-200 flex items-center space-x-2"
+                        >
+                            <Plus className="w-5 h-5" />
+                            <span>Create Reservation</span>
+                        </Button>
+                    </div>
                 </div>
 
                 {reservations.length === 0 ? (
@@ -60,7 +86,14 @@ export const NurseReservations = (
                             <Calendar className="w-12 h-12 text-gray-400" />
                         </div>
                         <h3 className="text-xl font-semibold text-gray-900 mb-2">No Reservations Found</h3>
-                        <p className="text-gray-600">There are no reservations to display at this time.</p>
+                        <p className="text-gray-600 mb-4">There are no reservations to display at this time.</p>
+                        <Button 
+                            onClick={handleCreateReservation}
+                            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg shadow-md transition-colors duration-200 flex items-center space-x-2 mx-auto"
+                        >
+                            <Plus className="w-5 h-5" />
+                            <span>Create First Reservation</span>
+                        </Button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -149,6 +182,18 @@ export const NurseReservations = (
                                                     </p>
                                                 </div>
                                             </div>
+                                        </div>
+
+                                        {/* Action Button */}
+                                        <div className="pt-2">
+                                            <Button 
+                                                onClick={() => handleViewDetail(reservation.id)}
+                                                variant="outline" 
+                                                className="w-full border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 transition-colors duration-200 flex items-center justify-center space-x-2"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                                <span>View Details</span>
+                                            </Button>
                                         </div>
                                     </CardContent>
                                 </Card>
