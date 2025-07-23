@@ -24,8 +24,14 @@ const DashboardPage = async () => {
             )
 
             if (!response.success) {
+                if (response.status === 429) {
+                    return <div>Too many requests. Please try again later.</div>;
+                }
+
+                console.error("Failed to fetch nurse dashboard data:", response.message);
                 return <div>Error loading nurse dashboard.</div>;
             }
+
 
 
             return <NurseDashboard data={response.data} />;
