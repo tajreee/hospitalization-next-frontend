@@ -32,7 +32,7 @@ export async function customFetch<T = CustomFetchBaseResponse>(
 
   const result = await rawResult.json()
 
-  if (result.message === 'Token expired') {
+  if (result.message === 'Token is invalid. Please login again.') {
     deleteCookie('AT')
   }
 
